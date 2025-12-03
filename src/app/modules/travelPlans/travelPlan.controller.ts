@@ -4,9 +4,22 @@ import httpStatus from "http-status";
 import { TravelPlanService } from "./travelPlan.services";
 import pick from "../../helper/pick";
 import { travelPlanFilterableFields } from "./travelPlan.constant";
+import { fileUploader } from "../../helper/fileUploader";
+import { Request, Response } from "express";
+import ApiError from "../../middlewares/ApiError";
 
-const createTravelPlan = catchAsync(async (req: any, res) => {
-  const result = await TravelPlanService.createTravelPlan(req.body, req.user.id);
+
+const createTravelPlan = catchAsync(async (req: Request & { user?: any }, res: Response) => {
+
+  if (!req.user?.id) {
+    throw new ApiError(401, "Authentication required");
+  }
+
+  const result = await TravelPlanService.createTravelPlan(
+    req.body,
+    req.user.id,
+    req.file
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -43,10 +56,22 @@ const getSingleTravelPlan = catchAsync(async (req, res) => {
 });
 
 const updateTravelPlan = catchAsync(async (req: any, res) => {
+  let imageUrl = undefined;
+
+  if (req.file) {
+    const cloudResult = await fileUploader.uploadToCloudinary(req.file);
+    imageUrl = cloudResult.secure_url;
+  }
+
+  const data = {
+    ...req.body,
+    ...(imageUrl && { image: imageUrl })
+  };
+
   const result = await TravelPlanService.updateTravelPlan(
     req.params.id,
     req.user.id,
-    req.body
+    data
   );
 
   sendResponse(res, {
@@ -56,6 +81,7 @@ const updateTravelPlan = catchAsync(async (req: any, res) => {
     data: result,
   });
 });
+
 
 const deleteTravelPlan = catchAsync(async (req: any, res) => {
   const result = await TravelPlanService.deleteTravelPlan(

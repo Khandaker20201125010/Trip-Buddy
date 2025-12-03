@@ -41,6 +41,7 @@ router.get("/:id", UserController.getUserProfile);
 // UPDATE
 router.patch(
   "/:id",
+  fileUploader.upload.single("profileImage"),   
   validateRequest(UserValidation.updateUserValidation),
   UserController.updateUserProfile
 );

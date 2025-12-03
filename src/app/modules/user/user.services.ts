@@ -137,8 +137,7 @@ const getUserProfile = async (id: string) => {
     where: { id },
     include: {
       travelPlans: true,
-      reviewsReceived: true,
-      reviewsGiven: true,
+      reviews: true, 
     },
   });
 
@@ -149,12 +148,23 @@ const getUserProfile = async (id: string) => {
   return user;
 };
 
-const updateUserProfile = async (id: string, payload: any) => {
+
+const updateUserProfile = async (id: string, req: Request) => {
+  const payload = req.body;
+
+  // Handle new profile image
+  if (req.file) {
+    const upload = await fileUploader.uploadToCloudinary(req.file);
+    payload.profileImage = upload.secure_url;
+    payload.profileImageFileName = upload.public_id;
+  }
+
   return prisma.user.update({
     where: { id },
     data: payload,
   });
 };
+
 
 export const UserService = {
   registerUser,

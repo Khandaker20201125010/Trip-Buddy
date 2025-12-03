@@ -35,10 +35,9 @@ model User {
   premium               Boolean    @default(false)
   subscriptionExpiresAt DateTime?
 
-  travelPlans     TravelPlan[]
-  reviewsGiven    Review[]     @relation("ReviewsGiven")
-  reviewsReceived Review[]     @relation("ReviewsReceived")
-  payments        Payment[]
+  travelPlans TravelPlan[]
+  reviews     Review[]   @relation("Reviewer") 
+  payments    Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -47,8 +46,9 @@ model User {
 }
 
 model TravelPlan {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
+  image       String?
   destination String
   startDate   DateTime
   endDate     DateTime
@@ -57,21 +57,22 @@ model TravelPlan {
   description String?
   visibility  Boolean  @default(true)
 
-  user User @relation(fields: [userId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  reviews Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Review {
-  id         String  @id @default(uuid())
-  reviewerId String
-  revieweeId String
-  rating     Int
-  content    String?
+  id           String      @id @default(uuid())
+  reviewerId   String
+  travelPlanId String
+  rating       Int
+  content      String?
 
-  reviewer User @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-  reviewee User @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  reviewer   User       @relation("Reviewer", fields: [reviewerId], references: [id])
+  travelPlan TravelPlan @relation(fields: [travelPlanId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -101,4 +102,3 @@ model Admin {
 
   @@map("admins")
 }
-

@@ -4,13 +4,15 @@ import validateRequest from "../../middlewares/validateRequest";
 import { TravelPlanValidation } from "./travelPlan.validation";
 import auth from "../../middlewares/auth";
 import { Role } from "@prisma/client";
+import { fileUploader } from "../../helper/fileUploader";
 
 const router = express.Router();
 
-// CREATE
+// CREATE TRAVEL PLAN
 router.post(
   "/",
   auth(Role.USER, Role.ADMIN),
+  fileUploader.upload.single("file"),
   validateRequest(TravelPlanValidation.create),
   TravelPlanController.createTravelPlan
 );
@@ -25,6 +27,7 @@ router.get("/:id", TravelPlanController.getSingleTravelPlan);
 router.patch(
   "/:id",
   auth(Role.USER, Role.ADMIN),
+  fileUploader.upload.single("image"),
   validateRequest(TravelPlanValidation.update),
   TravelPlanController.updateTravelPlan
 );
