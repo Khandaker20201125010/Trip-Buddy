@@ -1,6 +1,6 @@
 export interface ITravelPlan {
   id?: string;
-  userId: string;
+  userId?: string;
   destination: string;
   startDate: Date;
   endDate: Date;

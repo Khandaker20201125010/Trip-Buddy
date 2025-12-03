@@ -3,5 +3,8 @@ export const travelPlanSearchableFields = ["destination", "travelType"];
 export const travelPlanFilterableFields = [
   "destination",
   "travelType",
-  "userId",
+  "minBudget",
+  "maxBudget",
+  "startDate",
+  "endDate",
 ];
