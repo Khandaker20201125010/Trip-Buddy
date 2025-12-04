@@ -17,6 +17,7 @@ router.post(
   TravelPlanController.createTravelPlan
 );
 
+router.post("/suggestion", TravelPlanController.getAISuggestions);
 // GET ALL
 router.get("/", TravelPlanController.getAllTravelPlans);
 

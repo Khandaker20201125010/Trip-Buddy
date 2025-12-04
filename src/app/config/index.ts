@@ -20,4 +20,5 @@ super_admin: {
   email: process.env.SUPER_ADMIN_EMAIL as string,
   password: process.env.SUPER_ADMIN_PASSWORD as string,
 },
+ openRouterApiKey: process.env.OPENROUTER_API_KEY as string,
 };

@@ -8,26 +8,26 @@ import { fileUploader } from "../../helper/fileUploader";
 import { Request, Response } from "express";
 import ApiError from "../../middlewares/ApiError";
 
+const createTravelPlan = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    if (!req.user?.id) {
+      throw new ApiError(401, "Authentication required");
+    }
 
-const createTravelPlan = catchAsync(async (req: Request & { user?: any }, res: Response) => {
+    const result = await TravelPlanService.createTravelPlan(
+      req.body,
+      req.user.id,
+      req.file
+    );
 
-  if (!req.user?.id) {
-    throw new ApiError(401, "Authentication required");
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: "Travel plan created successfully",
+      data: result,
+    });
   }
-
-  const result = await TravelPlanService.createTravelPlan(
-    req.body,
-    req.user.id,
-    req.file
-  );
-
-  sendResponse(res, {
-    statusCode: httpStatus.CREATED,
-    success: true,
-    message: "Travel plan created successfully",
-    data: result,
-  });
-});
+);
 
 const getAllTravelPlans = catchAsync(async (req, res) => {
   const filters = pick(req.query, travelPlanFilterableFields);
@@ -65,7 +65,7 @@ const updateTravelPlan = catchAsync(async (req: any, res) => {
 
   const data = {
     ...req.body,
-    ...(imageUrl && { image: imageUrl })
+    ...(imageUrl && { image: imageUrl }),
   };
 
   const result = await TravelPlanService.updateTravelPlan(
@@ -82,7 +82,6 @@ const updateTravelPlan = catchAsync(async (req: any, res) => {
   });
 });
 
-
 const deleteTravelPlan = catchAsync(async (req: any, res) => {
   const result = await TravelPlanService.deleteTravelPlan(
     req.params.id,
@@ -97,10 +96,21 @@ const deleteTravelPlan = catchAsync(async (req: any, res) => {
   });
 });
 
+const getAISuggestions = catchAsync(async (req: Request, res: Response) => {
+  const result = await TravelPlanService.getAISuggestions(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "AI suggestions fetched successfully",
+    data: result,
+  });
+});
 export const TravelPlanController = {
   createTravelPlan,
   getAllTravelPlans,
   getSingleTravelPlan,
   updateTravelPlan,
   deleteTravelPlan,
+  getAISuggestions,
 };

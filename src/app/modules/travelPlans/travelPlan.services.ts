@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { paginationHelper, IOptions } from "../../helper/paginationHelper";
 import { travelPlanSearchableFields } from "./travelPlan.constant";
 import { fileUploader } from "../../helper/fileUploader";
+import { openai } from "../../helper/Open-Router";
 
 const createTravelPlan = async (payload: any, userId: string, file?: Express.Multer.File) => {
   let imageUrl = null;
@@ -152,6 +153,99 @@ const matchTravelPlans = async (filters: any) => {
   });
 };
 
+const getAISuggestions = async (payload: { symptoms: string }) => {
+  const { symptoms } = payload;
+
+  if (!symptoms) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "symptoms is required!");
+  }
+
+  const travelPlans = await prisma.travelPlan.findMany({
+    include: {
+      user: true,
+      reviews: true,
+    },
+  });
+
+  const simplifiedPlans = travelPlans.map((plan) => ({
+    id: plan.id,
+    destination: plan.destination,
+    travelType: plan.travelType,
+    budget: plan.budget,
+    description: plan.description,
+    startDate: plan.startDate,
+    endDate: plan.endDate,
+    owner: {
+      name: plan.user.name,
+    },
+    reviews: plan.reviews.length,
+  }));
+
+  // NEW: Strong JSON-only instruction
+const prompt = `
+You are a travel recommendation AI.
+
+User symptoms: "${symptoms}"
+
+Here is a list of available travel plans:
+${JSON.stringify(simplifiedPlans, null, 2)}
+
+TASK:
+Select the TOP 3 travel plans that best match the user's symptoms.
+
+RULES:
+- ALWAYS return between 1 to 3 suggestions.
+- Sort them by relevance (highest matchScore first).
+- Return ONLY VALID JSON.
+- Do NOT include any explanation outside JSON.
+
+The JSON format MUST be:
+{
+  "suggestions": [
+    {
+      "id": "...",
+      "matchScore": number,
+      "reason": "short reason"
+    }
+  ]
+}
+`;
+
+
+  const response = await openai.chat.completions.create({
+    model: "meta-llama/llama-3.3-70b-instruct:free",
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0.4,
+  });
+
+  const aiText = response.choices[0]?.message?.content || "{}";
+
+  // NEW: Safe JSON parsing
+  let aiOutput;
+  try {
+    // Direct parse first attempt
+    aiOutput = JSON.parse(aiText);
+  } catch {
+    // Attempt to extract JSON substring
+    const match = aiText.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        aiOutput = JSON.parse(match[0]);
+      } catch {
+        throw new ApiError(500, "AI returned invalid JSON (after extraction)");
+      }
+    } else {
+      throw new ApiError(500, "AI returned invalid JSON format");
+    }
+  }
+
+  return {
+    ai: aiOutput,
+    availablePlans: travelPlans,
+  };
+};
+
+
 export const TravelPlanService = {
   createTravelPlan,
   getAllTravelPlans,
@@ -159,4 +253,5 @@ export const TravelPlanService = {
   updateTravelPlan,
   deleteTravelPlan,
   matchTravelPlans,
+  getAISuggestions
 };
